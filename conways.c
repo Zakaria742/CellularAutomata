@@ -9,6 +9,7 @@
 //█
 #define PLAYER "█"
 #define BACKGROUND ' '
+#define SPEED 0.1
 
 enum cell_type{
 	DEAD,
@@ -30,7 +31,7 @@ struct termsize getTsize(){
 void freeGrid(unsigned int**, int);
 
 unsigned int **Init_grid(int width, int height){
-	unsigned int **grid = calloc(height*width, sizeof(unsigned int*));
+	unsigned int **grid = calloc(height, sizeof(unsigned int*));
 	if(grid == NULL){
 		fprintf(stderr, "Error allocating the grid!\n");
 		exit(-1);
@@ -48,10 +49,10 @@ unsigned int **Init_grid(int width, int height){
 
 //Function to print the grid
 void printGrid(unsigned int** grid, int width, int height){
-	for(int i = 0; i < height; i++){
+	for(int i = 0; i < height - 1; i++){
 		for(int j = 0; j < width; j++){
 			if(grid[i][j] == ALIVE){
-				printf("\x1b[38;2;255;0;0m%s\x1b[0m", PLAYER);
+				printf("\x1b[38;2;158;168;47m%s\x1b[0m", PLAYER);
 				}
 			else{
 				printf("%c", BACKGROUND);
@@ -109,6 +110,42 @@ void Conways(unsigned int **grid, int width, int height){
 	freeGrid(new_generation_grid, height);
 	return ;
 }
+
+void brian(unsigned int **grid, int width, int height){
+	unsigned int **new_generation_grid = Init_grid(width, height);
+	for(int i = 0; i < height; i++){
+		for(int j = 0; j < width; j++){
+			int neighbor_cells = 0;
+			for(short k = -1; k <= 1; k++){
+				for(short l = -1; l <= 1; l++){
+					if (k == 0 && l == 0) continue;
+					int row = ((i + k)%height < 0) ? -(i+k)%height : (i+k)%height;
+					int column = ((j + l)%width < 0) ? -(j+l)%width : (j+l)%width;
+					if(grid[row][column] == ALIVE) neighbor_cells++;
+				}
+			}
+
+			switch(grid[i][j]){
+				case ALIVE:
+					new_generation_grid[i][j] = DEAD;
+					break;
+				case DEAD:
+					if(neighbor_cells == 2){
+						new_generation_grid[i][j] = ALIVE;
+					}
+					break;
+
+			}
+		}
+	}
+
+
+	cpy_grid(grid, new_generation_grid, width, height);
+	freeGrid(new_generation_grid, height);
+	return ;
+}
+
+
 unsigned int** resize(unsigned int **grid, int term_w, int term_h){
         freeGrid(grid, term_h);
         grid = Init_grid(term_w, term_h);
@@ -164,9 +201,9 @@ int main(){
 		printf("\x1b[2J\x1b[H");
 		printGrid(grid, term_w, term_h);
 		Conways(grid, term_w, term_h);
-		usleep(0.1*pow(10, 6));//0.1s is good
+		usleep(SPEED*pow(10, 6));//0.1s is good
 	}
-	printf("\x1b[?25h");
+	printf("\x1b[?25h\x1b[0m");
 	freeGrid(grid, term_h);
 	return 0;
 }
